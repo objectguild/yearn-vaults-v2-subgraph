@@ -80,13 +80,16 @@ export function createVault(
     if(vaultEntity == null) {
       vaultEntity = createNewVaultFromAddress(vault); 
       vaultEntity.transaction = transactionId
-      vaultEntity.classification = classification
       // vaultEntity.deploymentId = deploymentId
       vaultEntity.apiVersion = apiVersion
       if(createTemplate) {
         VaultTemplate.create(vault);
       }
     }
+
+    // NewVault may be emitted after the Vault entity has been created as an Experimental Vault
+    // so we should patch this value rather than only set it on entity creation
+    vaultEntity.classification = classification
   
     // vaultEntity.blockNumber = event.block.number
     // vaultEntity.timestamp = getTimestampInMillis(event)
