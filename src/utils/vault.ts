@@ -5,6 +5,7 @@ import {
 
 import { createEthTransaction, getTimestampInMillis } from "./commons";
 import { Vault as VaultContract } from '../../generated/Registry/Vault';
+import { Strategy as StrategyContract } from '../../generated/Registry/Strategy';
 import { Vault as VaultTemplate } from "../../generated/templates";
 import { BIGINT_ZERO } from '../utils/constants';
 import { getOrCreateToken } from '../utils/token';

@@ -24,6 +24,8 @@ dataSources:
           file: ./abis/ERC20Detailed.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: Strategy
+          file: ./abis/StrategyAPI.json
       eventHandlers:
         - event: NewRelease(indexed uint256,address,string)
           handler: handleNewRelease
@@ -59,6 +61,8 @@ templates:
           file: ./abis/Vault.json
         - name: ERC20
           file: ./abis/ERC20Detailed.json
+        - name: Strategy
+          file: ./abis/StrategyAPI.json
       eventHandlers:
         - event: StrategyAdded(indexed address,uint256,uint256,uint256)
           handler: handleStrategyAdded

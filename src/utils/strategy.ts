@@ -4,6 +4,8 @@ import {
   StrategyReport,
 } from "../../generated/schema";
 
+import { Strategy as StrategyContract } from '../../generated/Registry/Strategy';
+
 import { buildIdFromEvent, getTimestampInMillis } from "./commons";
 
 export function createStrategyReport(
@@ -80,6 +82,10 @@ export function createStrategy(
 ): Strategy {
   let id = strategy.toHexString()
   let entity = new Strategy(id)
+  let strategyContract = StrategyContract.bind(strategy);
+
+  entity.name = strategyContract.name();
+  
   entity.transaction = transactionId
   entity.address = strategy
   entity.vault = vault.toHexString()
