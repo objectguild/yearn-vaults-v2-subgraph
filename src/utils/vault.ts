@@ -10,7 +10,7 @@ import { BIGINT_ZERO } from '../utils/constants';
 import { getOrCreateToken } from '../utils/token';
 import { createStrategy } from "./strategy";
 
-const createNewVaultFromAddress = (vaultAddress: Address): Vault => {
+function createNewVaultFromAddress(vaultAddress: Address): Vault {
     let id = vaultAddress.toHexString();
     let vaultEntity = new Vault(id);
     let vaultContract = VaultContract.bind(vaultAddress);

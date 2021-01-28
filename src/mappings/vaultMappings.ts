@@ -1,21 +1,23 @@
+import { log } from '@graphprotocol/graph-ts'
+import { log } from '@graphprotocol/graph-ts'
+
 import { Address, ethereum, BigInt } from "@graphprotocol/graph-ts";
 import {
   StrategyAdded as StrategyAddedEvent,
   StrategyReported as StrategyReportedEvent,
-  Deposit1Call as DepositCall,
   Transfer as TransferEvent,
-  Withdraw1Call as WithdrawCall,
   Vault as VaultContract,
 } from "../../generated/Registry/Vault";
-import { Strategy, StrategyReport, Vault } from "../../generated/schema";
+import { Strategy, StrategyReport, Transaction, Vault } from "../../generated/schema";
 import {
   internalMapDeposit,
   internalMapTransfer,
-  internalMapWithdrawal,
+  // internalMapWithdrawal,
 } from "../utils/vaultBalanceUpdates";
 import { buildIdFromEvent, createEthTransaction, getTimestampInMillis } from "../utils/commons";
 import { getOrCreateVault } from "../utils/vault";
 import { createStrategy, reportStrategy } from "../utils/strategy";
+import { ZERO_ADDRESS } from "../utils/constants";
 
 
 export function addStrategyToVault(
@@ -77,53 +79,37 @@ export function handleStrategyReported(event: StrategyReportedEvent): void {
   )
 }
 
-
-//  VAULT BALANCE UPDATES
-
-export function handleDeposit(call: DepositCall): void {
-  let vaultContract = VaultContract.bind(call.to)
-  internalMapDeposit(
-    call.transaction.hash,
-    call.transaction.index,
-    call.to,
-    call.from,
-    call.inputs._amount,
-    vaultContract.totalAssets(),
-    vaultContract.totalSupply(),
-    vaultContract.pricePerShare(),
-    call.block.timestamp,
-    call.block.number
-  );
-}
-
-export function handleWithdrawal(call: WithdrawCall): void {
-  let vaultContract = VaultContract.bind(call.to)
- internalMapWithdrawal(
-  call.transaction.hash,
-  call.transaction.index,
-  call.to,
-  call.from,
-  call.inputs._shares,
-  vaultContract.totalAssets(),
-  vaultContract.totalSupply(),
-  vaultContract.pricePerShare(),
-  call.block.timestamp,
-  call.block.number
- );
-}
-
 export function handleTransfer(event: TransferEvent): void {
-  let vaultContract = VaultContract.bind(event.address)
-  internalMapTransfer(
-    event.transaction.hash,
-    event.transaction.index,
-    event.address,
-    event.params.sender,
-    event.params.receiver,
-    event.params.value,
-    vaultContract.totalAssets(),
-    vaultContract.totalSupply(),
-    event.block.timestamp,
-    event.block.number
-  );
+  let ethTransaction = createEthTransaction(event, "TransferEvent");
+  let vaultContract = VaultContract.bind(event.address);
+  if (event.params.sender.toHexString() == ZERO_ADDRESS) { // DEPOSIT
+    // let pricePerShareCall = vaultContract.try_pricePerShare();
+    // let pricePerShare = pricePerShareCall.reverted ? '' : pricePerShareCall.value;
+
+    internalMapDeposit(
+      ethTransaction,
+      event.params.receiver,
+      event.params.sender,
+      event.params.value,
+      vaultContract.totalAssets(),
+      vaultContract.totalSupply(),
+      // pricePerShare,
+      event.block.timestamp,
+      event.block.number
+    );
+  } else if (event.params.receiver.toHexString() == ZERO_ADDRESS) {
+    // withdrawal
+  } else { // TRANSFER
+    internalMapTransfer(
+      ethTransaction,
+      event.address,
+      event.params.sender,
+      event.params.receiver,
+      event.params.value,
+      vaultContract.totalAssets(),
+      vaultContract.totalSupply(),
+      event.block.timestamp,
+      event.block.number
+    );
+  }
 }

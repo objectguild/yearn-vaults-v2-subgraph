@@ -148,15 +148,15 @@ type VaultUpdate @entity {
   tokensDeposited: BigInt!
   "Tokens Withdrawn"
   tokensWithdrawn: BigInt!
-  "Sum of Shares minted over all time"
+  "Shares minted"
   sharesMinted: BigInt!
-  "Sum of Shares burnt over all time"
+  "Shares burnt"
   sharesBurnt: BigInt!
 
   ### PERFORMANCE
 
-  "Current price per full share"
-  pricePerShare: BigInt!
+  # "Current price per full share"
+  # pricePerShare: BigInt!
 
   "Returns generated in Tokens"
   returnsGenerated: BigInt!
