@@ -82,13 +82,13 @@ export function createStrategy(
   performanceFee: BigInt,
   event: ethereum.Event
 ): Strategy {
-  log.info("Processing strategy {}", [strategy.toHexString()]);
   let strategyContract = StrategyContract.bind(strategy);
   let tryName = strategyContract.try_name();
+
   let id = strategy.toHexString()
   let entity = new Strategy(id)
   entity.transaction = transactionId
-  entity.name = tryName.reverted ? "TDB" : tryName.value.toString();
+  entity.name = tryName.reverted ? "TBD" : tryName.value.toString();
   entity.address = strategy
   entity.vault = vault.toHexString()
   entity.reports = []

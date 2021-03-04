@@ -18,7 +18,6 @@ import { createStrategy, reportStrategy } from "../utils/strategy";
 export function handleStrategyAdded(event: StrategyAddedEvent): void {
   let ethTransaction = createEthTransaction(event, "StrategyAddedEvent")
 
-  // TODO: refactor to createStrategy since derived links vault + strat
   createStrategy(
     ethTransaction.id,
     event.params.strategy,
