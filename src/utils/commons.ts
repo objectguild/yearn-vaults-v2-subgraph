@@ -8,8 +8,15 @@ export function getTimestampInMillis(block: ethereum.Block): BigInt {
   return block.timestamp.times(BigInt.fromI32(1000));
 }
 
-export function buildIdFromVaultIdAndTransaction(id: string, tx:ethereum.Transaction): string {
-  return id.concat('-').concat(tx.hash.toHexString()).concat("-").concat(tx.index.toString());
+export function buildIdFromVaultIdAndTransaction(
+  id: string,
+  tx: ethereum.Transaction
+): string {
+  return id
+    .concat('-')
+    .concat(tx.hash.toHexString())
+    .concat('-')
+    .concat(tx.index.toString());
 }
 
 // make a derived ID from transaction hash and big number
@@ -23,7 +30,6 @@ export function buildIdFromEvent(event: ethereum.Event): string {
 
 export function buildBlockId(block: ethereum.Block): string {
   return (
-
     block.hash.toHex() +
     '-' +
     block.number.toString() +

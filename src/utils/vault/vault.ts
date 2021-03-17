@@ -1,5 +1,11 @@
 import { Address, ethereum, BigInt, log } from '@graphprotocol/graph-ts';
-import { AccountVaultPosition, AccountVaultPositionUpdate, Transaction, Vault, VaultUpdate } from '../../../generated/schema';
+import {
+  AccountVaultPosition,
+  AccountVaultPositionUpdate,
+  Transaction,
+  Vault,
+  VaultUpdate,
+} from '../../../generated/schema';
 
 import { Vault as VaultContract } from '../../../generated/Registry/Vault';
 import { Vault as VaultTemplate } from '../../../generated/templates';
@@ -191,19 +197,24 @@ export function withdraw(
   withdrawnAmount: BigInt,
   sharesBurnt: BigInt,
   pricePerShare: BigInt,
-  transaction: Transaction,
+  transaction: Transaction
 ): void {
-  let account = accountLibrary.getOrCreate(from)
-  let vault = getOrCreate(to, transaction.hash.toHexString())
+  let account = accountLibrary.getOrCreate(from);
+  let vault = getOrCreate(to, transaction.hash.toHexString());
 
   // Updating Account Vault Position Update
-  let accountVaultPositionId = accountVaultPositionLibrary.buildId(account, vault)
-  let accountVaultPosition = AccountVaultPosition.load(accountVaultPositionId)
+  let accountVaultPositionId = accountVaultPositionLibrary.buildId(
+    account,
+    vault
+  );
+  let accountVaultPosition = AccountVaultPosition.load(accountVaultPositionId);
   // This scenario where accountVaultPosition === null shouldn't happen. Acount vault position should have been created when the account deposited the tokens.
   if (accountVaultPosition !== null) {
-    let latestAccountVaultPositionUpdate = AccountVaultPositionUpdate.load(accountVaultPosition.latestUpdate);
+    let latestAccountVaultPositionUpdate = AccountVaultPositionUpdate.load(
+      accountVaultPosition.latestUpdate
+    );
     // The scenario where latestAccountVaultPositionUpdate === null shouldn't happen. One account vault position update should have created when user deposited the tokens.
-    if(latestAccountVaultPositionUpdate !== null) {
+    if (latestAccountVaultPositionUpdate !== null) {
       accountVaultPositionLibrary.withdraw(
         accountVaultPosition as AccountVaultPosition,
         latestAccountVaultPositionUpdate as AccountVaultPositionUpdate,
@@ -215,7 +226,7 @@ export function withdraw(
   }
 
   // Updating Vault Update
-  let latestVaultUpdate = VaultUpdate.load(vault.latestUpdate)
+  let latestVaultUpdate = VaultUpdate.load(vault.latestUpdate);
   // This scenario where latestVaultUpdate === null shouldn't happen. One vault update should have created when user deposited the tokens.
   if (latestVaultUpdate !== null) {
     vaultUpdateLibrary.withdraw(
@@ -225,6 +236,6 @@ export function withdraw(
       withdrawnAmount,
       sharesBurnt,
       transaction
-    )
+    );
   }
 }

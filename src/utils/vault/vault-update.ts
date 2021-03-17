@@ -127,7 +127,7 @@ export function withdraw(
   pricePerShare: BigInt,
   withdrawnAmount: BigInt,
   sharesBurnt: BigInt,
-  transaction: Transaction,
+  transaction: Transaction
 ): VaultUpdate {
   let vaultUpdateId = buildIdFromVaultAndTransaction(vault, transaction);
   let newVaultUpdate = createVaultUpdate(
@@ -143,10 +143,10 @@ export function withdraw(
     latestVaultUpdate.totalFees,
     latestVaultUpdate.managementFees,
     latestVaultUpdate.performanceFees
-  )
-  vault.sharesSupply = vault.sharesSupply.minus(sharesBurnt)
-  vault.balanceTokens = vault.balanceTokens.minus(withdrawnAmount)
-  vault.latestUpdate = newVaultUpdate.id
-  vault.save()
-  return newVaultUpdate
+  );
+  vault.sharesSupply = vault.sharesSupply.minus(sharesBurnt);
+  vault.balanceTokens = vault.balanceTokens.minus(withdrawnAmount);
+  vault.latestUpdate = newVaultUpdate.id;
+  vault.save();
+  return newVaultUpdate;
 }

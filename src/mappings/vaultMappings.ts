@@ -103,18 +103,21 @@ export function handleDepositWithAmountAndRecipient(call: Deposit2Call): void {
 }
 
 export function handleWithdraw(call: WithdrawCall): void {
-  log.info('[Vault mappings] Handle withdraw. TX hash: {}', [call.transaction.hash.toHexString()])
-  let transaction = getOrCreateTransactionFromCall(
-    call,
-    'vault.withdraw()'
-  )
-  log.info('[Vault mappings] Handle withdraw(): Vault address {}', [call.to.toHexString()])
+  log.info('[Vault mappings] Handle withdraw. TX hash: {}', [
+    call.transaction.hash.toHexString(),
+  ]);
+  let transaction = getOrCreateTransactionFromCall(call, 'vault.withdraw()');
+  log.info('[Vault mappings] Handle withdraw(): Vault address {}', [
+    call.to.toHexString(),
+  ]);
   let vaultContract = VaultContract.bind(call.to);
 
   let withdrawnAmount = call.outputs.value0;
-  let totalAssets = vaultContract.totalAssets()
-  let totalSupply = vaultContract.totalSupply()
-  let totalSharesBurnt = totalAssets.equals(BIGINT_ZERO) ? withdrawnAmount : withdrawnAmount.times(totalSupply).div(totalAssets)
+  let totalAssets = vaultContract.totalAssets();
+  let totalSupply = vaultContract.totalSupply();
+  let totalSharesBurnt = totalAssets.equals(BIGINT_ZERO)
+    ? withdrawnAmount
+    : withdrawnAmount.times(totalSupply).div(totalAssets);
 
   vaultLibrary.withdraw(
     call.from,
@@ -123,17 +126,21 @@ export function handleWithdraw(call: WithdrawCall): void {
     totalSharesBurnt,
     vaultContract.pricePerShare(),
     transaction
-  )
+  );
 }
 
 export function handleWithdrawWithShares(call: Withdraw1Call): void {
-  log.info('[Vault mappings] Handle withdraw with shares. TX hash: {}', [call.transaction.hash.toHexString()])
+  log.info('[Vault mappings] Handle withdraw with shares. TX hash: {}', [
+    call.transaction.hash.toHexString(),
+  ]);
   let transaction = getOrCreateTransactionFromCall(
     call,
     'vault.withdraw(uint256)'
-  )
-  log.info('[Vault mappings] Handle withdraw(shares): Vault address {}', [call.to.toHexString()])
-  let vaultContract = VaultContract.bind(call.to)
+  );
+  log.info('[Vault mappings] Handle withdraw(shares): Vault address {}', [
+    call.to.toHexString(),
+  ]);
+  let vaultContract = VaultContract.bind(call.to);
 
   vaultLibrary.withdraw(
     call.from,
@@ -142,19 +149,25 @@ export function handleWithdrawWithShares(call: Withdraw1Call): void {
     call.inputs._shares,
     vaultContract.pricePerShare(),
     transaction
-  )
+  );
 }
 
 export function handleWithdrawWithSharesAndRecipient(
   call: Withdraw2Call
 ): void {
-  log.info('[Vault mappings] Handle withdraw with shares and recipient. TX hash: {}', [call.transaction.hash.toHexString()])
+  log.info(
+    '[Vault mappings] Handle withdraw with shares and recipient. TX hash: {}',
+    [call.transaction.hash.toHexString()]
+  );
   let transaction = getOrCreateTransactionFromCall(
     call,
     'vault.withdraw(uint256,address)'
-  )
-  log.info('[Vault mappings] Handle withdraw(shares, recipient): Vault address {}', [call.to.toHexString()])
-  let vaultContract = VaultContract.bind(call.to)
+  );
+  log.info(
+    '[Vault mappings] Handle withdraw(shares, recipient): Vault address {}',
+    [call.to.toHexString()]
+  );
+  let vaultContract = VaultContract.bind(call.to);
 
   vaultLibrary.withdraw(
     call.inputs._recipient,
@@ -163,7 +176,7 @@ export function handleWithdrawWithSharesAndRecipient(
     call.inputs._shares,
     vaultContract.pricePerShare(),
     transaction
-  )
+  );
 }
 
 export function handleTransfer(event: TransferEvent): void {

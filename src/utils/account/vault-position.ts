@@ -94,14 +94,14 @@ export function withdraw(
   latestAccountVaultPositionUpdate: AccountVaultPositionUpdate,
   withdrawnAmount: BigInt,
   sharesBurnt: BigInt,
-  transaction: Transaction,
+  transaction: Transaction
 ): AccountVaultPositionUpdate {
-  let account = Account.load(accountVaultPosition.account) as Account
-  let vault = Vault.load(accountVaultPosition.vault) as Vault
+  let account = Account.load(accountVaultPosition.account) as Account;
+  let vault = Vault.load(accountVaultPosition.vault) as Vault;
   let newAccountVaultPositionUpdate = vaultPositionUpdateLibrary.createAccountVaultPositionUpdate(
     vaultPositionUpdateLibrary.buildIdFromAccountAndTransaction(
       account,
-      transaction,
+      transaction
     ),
     account,
     vault,
@@ -110,9 +110,9 @@ export function withdraw(
     latestAccountVaultPositionUpdate.deposits,
     latestAccountVaultPositionUpdate.withdrawals.plus(withdrawnAmount),
     latestAccountVaultPositionUpdate.sharesMinted,
-    latestAccountVaultPositionUpdate.sharesBurnt.plus(sharesBurnt),
-  )
-  accountVaultPosition.latestUpdate = newAccountVaultPositionUpdate.id
-  accountVaultPosition.save()
-  return newAccountVaultPositionUpdate
+    latestAccountVaultPositionUpdate.sharesBurnt.plus(sharesBurnt)
+  );
+  accountVaultPosition.latestUpdate = newAccountVaultPositionUpdate.id;
+  accountVaultPosition.save();
+  return newAccountVaultPositionUpdate;
 }
