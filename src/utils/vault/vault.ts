@@ -12,6 +12,7 @@ import { Vault as VaultTemplate } from '../../../generated/templates';
 import { BIGINT_ZERO } from '../constants';
 import { getOrCreateToken } from '../token';
 import * as depositLibrary from '../deposit';
+import * as withdrawalLibrary from '../withdrawal';
 import * as accountLibrary from '../account/account';
 import * as accountVaultPositionLibrary from '../account/vault-position';
 import * as vaultUpdateLibrary from './vault-update';
@@ -201,6 +202,14 @@ export function withdraw(
 ): void {
   let account = accountLibrary.getOrCreate(from);
   let vault = getOrCreate(to, transaction.hash.toHexString());
+
+  withdrawalLibrary.getOrCreate(
+    account,
+    vault,
+    transaction,
+    withdrawnAmount,
+    sharesBurnt
+  );
 
   // Updating Account Vault Position Update
   let accountVaultPositionId = accountVaultPositionLibrary.buildId(
