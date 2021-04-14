@@ -1,6 +1,6 @@
-import { Address, ethereum, BigInt, log } from '@graphprotocol/graph-ts';
+import { log } from '@graphprotocol/graph-ts';
 import { Harvested as HarvestedEvent } from '../../generated/templates/Vault/Strategy';
-import * as strategyLibrary from '../utils/strategy';
+import * as strategyLibrary from '../utils/strategy/strategy';
 import { getOrCreateTransactionFromEvent } from '../utils/transaction';
 
 export function handleHarvested(event: HarvestedEvent): void {

@@ -1,4 +1,4 @@
-import { Address, ethereum, BigInt, log } from '@graphprotocol/graph-ts';
+import { log } from '@graphprotocol/graph-ts';
 import {
   StrategyAdded as StrategyAddedEvent,
   StrategyReported as StrategyReportedEvent,
@@ -11,9 +11,8 @@ import {
   Withdraw1Call,
   Withdraw2Call,
 } from '../../generated/Registry/Vault';
-import { Harvested } from '../../generated/templates/Vault/Strategy';
-import { MAX_UINT } from '../utils/constants';
-import * as strategyLibrary from '../utils/strategy';
+import { BIGINT_ZERO, MAX_UINT, ZERO_ADDRESS } from '../utils/constants';
+import * as strategyLibrary from '../utils/strategy/strategy';
 import {
   getOrCreateTransactionFromCall,
   getOrCreateTransactionFromEvent,
@@ -37,13 +36,13 @@ export function handleStrategyAdded(event: StrategyAddedEvent): void {
 }
 
 export function handleStrategyReported(event: StrategyReportedEvent): void {
-  log.debug('[Vault mappings] Handle deposit', []);
+  log.debug('[Vault mappings] Handle strategy reported', []);
   let ethTransaction = getOrCreateTransactionFromEvent(
     event,
     'StrategyReportedEvent'
   );
   strategyLibrary.createReport(
-    ethTransaction.id,
+    ethTransaction,
     event.params.strategy.toHexString(),
     event.params.gain,
     event.params.loss,
@@ -54,6 +53,18 @@ export function handleStrategyReported(event: StrategyReportedEvent): void {
     event.params.debtLimit,
     event
   );
+
+  log.info(
+    '[Vault mappings] Updating price per share (strategy reported): {}',
+    [event.transaction.hash.toHexString()]
+  );
+  let vaultContractAddress = event.address;
+  let vaultContract = VaultContract.bind(vaultContractAddress);
+  vaultLibrary.strategyReported(
+    ethTransaction,
+    vaultContractAddress,
+    vaultContract.pricePerShare()
+  );
 }
 
 //  VAULT BALANCE UPDATES
@@ -63,12 +74,12 @@ export function handleDeposit(call: DepositCall): void {
   let transaction = getOrCreateTransactionFromCall(call, 'vault.deposit()');
   let vaultContract = VaultContract.bind(call.to);
   vaultLibrary.deposit(
+    vaultContract,
     transaction,
     call.from,
     call.to,
     MAX_UINT,
-    call.outputs.value0,
-    vaultContract.pricePerShare()
+    call.outputs.value0
   );
 }
 
@@ -77,12 +88,12 @@ export function handleDepositWithAmount(call: Deposit1Call): void {
   let transaction = getOrCreateTransactionFromCall(call, 'vault.deposit(uint)');
   let vaultContract = VaultContract.bind(call.to);
   vaultLibrary.deposit(
+    vaultContract,
     transaction,
     call.from,
     call.to,
     call.inputs._amount,
-    call.outputs.value0,
-    vaultContract.pricePerShare()
+    call.outputs.value0
   );
 }
 
@@ -94,48 +105,142 @@ export function handleDepositWithAmountAndRecipient(call: Deposit2Call): void {
   );
   let vaultContract = VaultContract.bind(call.to);
   vaultLibrary.deposit(
+    vaultContract,
     transaction,
     call.inputs._recipient,
     call.to,
     call.inputs._amount,
-    call.outputs.value0,
-    vaultContract.pricePerShare()
+    call.outputs.value0
   );
 }
 
 export function handleWithdraw(call: WithdrawCall): void {
-  log.debug('[Vault mappings] Handle withdraw', []);
-  getOrCreateTransactionFromCall(call, 'vault.withdraw()');
+  log.info('[Vault mappings] Handle withdraw. TX hash: {}', [
+    call.transaction.hash.toHexString(),
+  ]);
+  let transaction = getOrCreateTransactionFromCall(call, 'vault.withdraw()');
+  log.info('[Vault mappings] Handle withdraw(): Vault address {}', [
+    call.to.toHexString(),
+  ]);
+  let vaultContract = VaultContract.bind(call.to);
+
+  let withdrawnAmount = call.outputs.value0;
+  let totalAssets = vaultContract.totalAssets();
+  let totalSupply = vaultContract.totalSupply();
+  let totalSharesBurnt = totalAssets.equals(BIGINT_ZERO)
+    ? withdrawnAmount
+    : withdrawnAmount.times(totalSupply).div(totalAssets);
+
+  vaultLibrary.withdraw(
+    vaultContract,
+    call.from,
+    call.to,
+    withdrawnAmount,
+    totalSharesBurnt,
+    vaultContract.pricePerShare(),
+    transaction
+  );
 }
 
 export function handleWithdrawWithShares(call: Withdraw1Call): void {
-  log.debug('[Vault mappings] Handle withdraw with shares', []);
-  getOrCreateTransactionFromCall(call, 'vault.withdraw(uint256)');
+  log.info('[Vault mappings] Handle withdraw with shares. TX hash: {}', [
+    call.transaction.hash.toHexString(),
+  ]);
+  let transaction = getOrCreateTransactionFromCall(
+    call,
+    'vault.withdraw(uint256)'
+  );
+  log.info('[Vault mappings] Handle withdraw(shares): Vault address {}', [
+    call.to.toHexString(),
+  ]);
+  let vaultContract = VaultContract.bind(call.to);
+
+  vaultLibrary.withdraw(
+    vaultContract,
+    call.from,
+    call.to,
+    call.outputs.value0,
+    call.inputs._shares,
+    vaultContract.pricePerShare(),
+    transaction
+  );
 }
 
 export function handleWithdrawWithSharesAndRecipient(
   call: Withdraw2Call
 ): void {
-  log.debug('[Vault mappings] Handle withdraw with shares and recipient', []);
-  getOrCreateTransactionFromCall(call, 'vault.withdraw(uint256,address)');
+  log.info(
+    '[Vault mappings] Handle withdraw with shares and recipient. TX hash: {}',
+    [call.transaction.hash.toHexString()]
+  );
+  let transaction = getOrCreateTransactionFromCall(
+    call,
+    'vault.withdraw(uint256,address)'
+  );
+  log.info(
+    '[Vault mappings] Handle withdraw(shares, recipient): Vault address {}',
+    [call.to.toHexString()]
+  );
+  let vaultContract = VaultContract.bind(call.to);
+
+  vaultLibrary.withdraw(
+    vaultContract,
+    call.inputs._recipient,
+    call.to,
+    call.outputs.value0,
+    call.inputs._shares,
+    vaultContract.pricePerShare(),
+    transaction
+  );
 }
 
-// export function handleWithdrawWithSharesRecipientAndMaxLoss(call: Withdraw3Call): void {
-//   log.debug('[Vault mappings] Handle withdraw with shares and recipient', [])
-// }
-
 export function handleTransfer(event: TransferEvent): void {
-  // let vaultContract = VaultContract.bind(event.address)
-  // internalMapTransfer(
-  //   event.transaction.hash,
-  //   event.transaction.index,
-  //   event.address,
-  //   event.params.sender,
-  //   event.params.receiver,
-  //   event.params.value,
-  //   vaultContract.totalAssets(),
-  //   vaultContract.totalSupply(),
-  //   event.block.timestamp,
-  //   event.block.number
-  // );
+  log.info('[Vault mappings] Handle transfer: From: {} - To: {}. TX hash: {}', [
+    event.params.sender.toHexString(),
+    event.params.receiver.toHexString(),
+    event.transaction.hash.toHexString(),
+  ]);
+  if (
+    event.params.sender.toHexString() != ZERO_ADDRESS &&
+    event.params.receiver.toHexString() != ZERO_ADDRESS
+  ) {
+    log.info(
+      '[Vault mappings] Processing transfer: From: {} - To: {}. TX hash: {}',
+      [
+        event.params.sender.toHexString(),
+        event.params.receiver.toHexString(),
+        event.transaction.hash.toHexString(),
+      ]
+    );
+    let transaction = getOrCreateTransactionFromEvent(
+      event,
+      'vault.transfer(address,uint256)'
+    );
+    let vaultContract = VaultContract.bind(event.address);
+    let totalAssets = vaultContract.totalAssets();
+    let totalSupply = vaultContract.totalSupply();
+    let sharesAmount = event.params.value;
+    let amount = sharesAmount.times(totalAssets).div(totalSupply);
+    // share  = (amount * totalSupply) / totalAssets
+    // amount = (shares * totalAssets) / totalSupply
+    vaultLibrary.transfer(
+      vaultContract,
+      event.params.sender,
+      event.params.receiver,
+      amount,
+      vaultContract.token(),
+      sharesAmount,
+      event.address,
+      transaction
+    );
+  } else {
+    log.info(
+      '[Vault mappings] Not processing transfer: From: {} - To: {}. TX hash: {}',
+      [
+        event.params.sender.toHexString(),
+        event.params.receiver.toHexString(),
+        event.transaction.hash.toHexString(),
+      ]
+    );
+  }
 }

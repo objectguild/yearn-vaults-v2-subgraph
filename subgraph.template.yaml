@@ -34,6 +34,38 @@ dataSources:
         - event: VaultTagged(address,string)
           handler: handleVaultTagged
       file: ./src/mappings/registryMappings.ts
+  # 2 RegistryV2
+  - kind: ethereum/contract
+    name: RegistryV2
+    network: {{network}}
+    source:
+      startBlock: {{startBlock}}
+      address: '{{RegistryV2}}'
+      abi: Registry
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Vault
+        - Transaction
+      abis:
+        - name: Registry
+          file: ./abis/Registry.json
+        - name: ERC20
+          file: ./abis/ERC20Detailed.json
+        - name: Vault
+          file: ./abis/Vault.json
+      eventHandlers:
+        - event: NewRelease(indexed uint256,address,string)
+          handler: handleNewRelease
+        - event: NewVault(indexed address,indexed uint256,address,string)
+          handler: handleNewVault
+        - event: NewExperimentalVault(indexed address,indexed address,address,string)
+          handler: handleNewExperimentalVault
+        - event: VaultTagged(address,string)
+          handler: handleVaultTagged
+      file: ./src/mappings/registryMappings.ts
  
 templates:
   # 1 Vault (template)
@@ -53,9 +85,13 @@ templates:
         - VaultUpdate
         - Transfer
         - Account
-        - AccountUpdate
-        - AccountVaultBalance
+        - Deposit
+        - VaultUpdate
+        - Transfer
+        - Transaction
         - Token
+        - AccountVaultPosition
+        - AccountVaultPositionUpdate
       abis:
         - name: Vault
           file: ./abis/Vault.json
@@ -68,10 +104,8 @@ templates:
           handler: handleStrategyAdded
         - event: StrategyReported(indexed address,uint256,uint256,uint256,uint256,uint256,uint256,uint256)
           handler: handleStrategyReported
-        # TODO: failing in graph sync at block #11579817  
-        # - event: Transfer(indexed address,indexed address,uint256)
-        #   handler: handleTransfer
-      # TODO: failing in graph sync at block #11595706  
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
       callHandlers:
         - function: deposit()
           handler: handleDeposit
@@ -85,8 +119,6 @@ templates:
           handler: handleWithdrawWithShares
         - function: withdraw(uint256,address)
           handler: handleWithdrawWithSharesAndRecipient
-        # - function: withdraw(uint256,address,uint256)
-        #   handler: handleWithdrawWithSharesRecipientAndMaxLoss
 
   - name: Strategy
     kind: ethereum/contract

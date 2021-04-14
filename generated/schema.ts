@@ -776,6 +776,24 @@ export class Withdrawal extends Entity {
     this.set("id", Value.fromString(value));
   }
 
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get blockNumber(): BigInt {
+    let value = this.get("blockNumber");
+    return value.toBigInt();
+  }
+
+  set blockNumber(value: BigInt) {
+    this.set("blockNumber", Value.fromBigInt(value));
+  }
+
   get account(): string {
     let value = this.get("account");
     return value.toString();
@@ -897,13 +915,13 @@ export class Transfer extends Entity {
     this.set("shareToken", Value.fromString(value));
   }
 
-  get amount(): BigInt {
-    let value = this.get("amount");
+  get shareAmount(): BigInt {
+    let value = this.get("shareAmount");
     return value.toBigInt();
   }
 
-  set amount(value: BigInt) {
-    this.set("amount", Value.fromBigInt(value));
+  set shareAmount(value: BigInt) {
+    this.set("shareAmount", Value.fromBigInt(value));
   }
 
   get token(): string {
@@ -1065,6 +1083,15 @@ export class AccountVaultPosition extends Entity {
   set balanceTokens(value: BigInt) {
     this.set("balanceTokens", Value.fromBigInt(value));
   }
+
+  get balancePosition(): BigInt {
+    let value = this.get("balancePosition");
+    return value.toBigInt();
+  }
+
+  set balancePosition(value: BigInt) {
+    this.set("balancePosition", Value.fromBigInt(value));
+  }
 }
 
 export class AccountVaultPositionUpdate extends Entity {
@@ -1182,6 +1209,51 @@ export class AccountVaultPositionUpdate extends Entity {
 
   set sharesBurnt(value: BigInt) {
     this.set("sharesBurnt", Value.fromBigInt(value));
+  }
+
+  get tokensSent(): BigInt {
+    let value = this.get("tokensSent");
+    return value.toBigInt();
+  }
+
+  set tokensSent(value: BigInt) {
+    this.set("tokensSent", Value.fromBigInt(value));
+  }
+
+  get tokensReceived(): BigInt {
+    let value = this.get("tokensReceived");
+    return value.toBigInt();
+  }
+
+  set tokensReceived(value: BigInt) {
+    this.set("tokensReceived", Value.fromBigInt(value));
+  }
+
+  get sharesSent(): BigInt {
+    let value = this.get("sharesSent");
+    return value.toBigInt();
+  }
+
+  set sharesSent(value: BigInt) {
+    this.set("sharesSent", Value.fromBigInt(value));
+  }
+
+  get sharesReceived(): BigInt {
+    let value = this.get("sharesReceived");
+    return value.toBigInt();
+  }
+
+  set sharesReceived(value: BigInt) {
+    this.set("sharesReceived", Value.fromBigInt(value));
+  }
+
+  get balancePosition(): BigInt {
+    let value = this.get("balancePosition");
+    return value.toBigInt();
+  }
+
+  set balancePosition(value: BigInt) {
+    this.set("balancePosition", Value.fromBigInt(value));
   }
 
   get vaultUpdate(): string {
@@ -1468,6 +1540,112 @@ export class StrategyReport extends Entity {
 
   set debtLimit(value: BigInt) {
     this.set("debtLimit", Value.fromBigInt(value));
+  }
+}
+
+export class StrategyReportResult extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(
+      id !== null,
+      "Cannot save StrategyReportResult entity without an ID"
+    );
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save StrategyReportResult entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("StrategyReportResult", id.toString(), this);
+  }
+
+  static load(id: string): StrategyReportResult | null {
+    return store.get("StrategyReportResult", id) as StrategyReportResult | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get blockNumber(): BigInt {
+    let value = this.get("blockNumber");
+    return value.toBigInt();
+  }
+
+  set blockNumber(value: BigInt) {
+    this.set("blockNumber", Value.fromBigInt(value));
+  }
+
+  get report(): string {
+    let value = this.get("report");
+    return value.toString();
+  }
+
+  set report(value: string) {
+    this.set("report", Value.fromString(value));
+  }
+
+  get startTimestamp(): BigInt {
+    let value = this.get("startTimestamp");
+    return value.toBigInt();
+  }
+
+  set startTimestamp(value: BigInt) {
+    this.set("startTimestamp", Value.fromBigInt(value));
+  }
+
+  get endTimestamp(): BigInt {
+    let value = this.get("endTimestamp");
+    return value.toBigInt();
+  }
+
+  set endTimestamp(value: BigInt) {
+    this.set("endTimestamp", Value.fromBigInt(value));
+  }
+
+  get duration(): BigDecimal {
+    let value = this.get("duration");
+    return value.toBigDecimal();
+  }
+
+  set duration(value: BigDecimal) {
+    this.set("duration", Value.fromBigDecimal(value));
+  }
+
+  get durationPr(): BigDecimal {
+    let value = this.get("durationPr");
+    return value.toBigDecimal();
+  }
+
+  set durationPr(value: BigDecimal) {
+    this.set("durationPr", Value.fromBigDecimal(value));
+  }
+
+  get apr(): BigDecimal {
+    let value = this.get("apr");
+    return value.toBigDecimal();
+  }
+
+  set apr(value: BigDecimal) {
+    this.set("apr", Value.fromBigDecimal(value));
   }
 }
 

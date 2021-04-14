@@ -207,7 +207,11 @@ type Deposit @entity {
 type Withdrawal @entity {
   "Transaction-Log"
   id: ID!
-  "Account making Deposit"
+  "Timestamp of update"
+  timestamp: BigInt!
+  "Block number of update"
+  blockNumber: BigInt!
+  "Account making withdraw"
   account: Account!
   "Vault withdrawn from"
   vault: Vault!
@@ -233,7 +237,7 @@ type Transfer @entity {
   "Vault Share Token"
   shareToken: Token!
   "Number of Vault Shares transferred"
-  amount: BigInt!
+  shareAmount: BigInt!
   "Vault Token"
   token: Token!
   "Number of Tokens redeemable for shares transferred"
@@ -266,8 +270,10 @@ type AccountVaultPosition @entity {
 
   "Share balance"
   balanceShares: BigInt!
-  "Token balance"
+  "The current balance of tokens defined as: sum(deposits) - sum(withdrawals) + sum(received transfers) - sum(sent transfers)."
   balanceTokens: BigInt!
+  "The current balance position defined as: (vault.balanceOf(account) * (vault.pricePerShare() / 10**vault.decimals()))."
+  balancePosition: BigInt!
 }
 
 type AccountVaultPositionUpdate @entity {
@@ -295,15 +301,15 @@ type AccountVaultPositionUpdate @entity {
   sharesBurnt: BigInt!
 
   # "Tokens sent"
-  # tokensSent: BigInt!
+  tokensSent: BigInt!
   # "Tokens received"
-  # tokensReceived: BigInt!
-
+  tokensReceived: BigInt!
   # "Share tokens sent"
-  # sharesSent: BigInt!
+  sharesSent: BigInt!
   # "Share tokens received"
-  # sharesReceived: BigInt!
-
+  sharesReceived: BigInt!
+  "The balance position."
+  balancePosition: BigInt!
   "Vault Update"
   vaultUpdate: VaultUpdate!
 }

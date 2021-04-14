@@ -1,14 +1,23 @@
-import { Address, ethereum, BigInt, log, Bytes } from '@graphprotocol/graph-ts';
-import { Transaction, Vault, VaultUpdate } from '../../../generated/schema';
+import { Address, ethereum, BigInt, log } from '@graphprotocol/graph-ts';
+import {
+  AccountVaultPosition,
+  AccountVaultPositionUpdate,
+  Transaction,
+  Vault,
+  VaultUpdate,
+} from '../../../generated/schema';
 
 import { Vault as VaultContract } from '../../../generated/Registry/Vault';
 import { Vault as VaultTemplate } from '../../../generated/templates';
 import { BIGINT_ZERO } from '../constants';
 import { getOrCreateToken } from '../token';
 import * as depositLibrary from '../deposit';
+import * as withdrawalLibrary from '../withdrawal';
 import * as accountLibrary from '../account/account';
 import * as accountVaultPositionLibrary from '../account/vault-position';
 import * as vaultUpdateLibrary from './vault-update';
+import * as transferLibrary from '../transfer';
+import * as tokenLibrary from '../token';
 
 const createNewVaultFromAddress = (
   vaultAddress: Address,
@@ -131,18 +140,19 @@ export function tag(vault: Address, tag: string): Vault {
 }
 
 export function deposit(
+  vaultContract: VaultContract,
   transaction: Transaction,
   receiver: Address,
   to: Address,
   depositedAmount: BigInt,
-  sharesMinted: BigInt,
-  pricePerShare: BigInt
+  sharesMinted: BigInt
 ): void {
   log.debug('[Vault] Deposit', []);
   let account = accountLibrary.getOrCreate(receiver);
   let vault = getOrCreate(to, transaction.id);
 
-  let vaultPositionResponse = accountVaultPositionLibrary.deposit(
+  accountVaultPositionLibrary.deposit(
+    vaultContract,
     account,
     vault,
     transaction,
@@ -150,7 +160,7 @@ export function deposit(
     sharesMinted
   );
 
-  let deposit = depositLibrary.getOrCreate(
+  depositLibrary.getOrCreate(
     account,
     vault,
     transaction,
@@ -159,6 +169,7 @@ export function deposit(
   );
 
   let vaultUpdate: VaultUpdate;
+  let pricePerShare = vaultContract.pricePerShare();
   if (vault.latestUpdate == null) {
     vaultUpdate = vaultUpdateLibrary.firstDeposit(
       vault,
@@ -183,4 +194,118 @@ export function deposit(
   vault.sharesSupply = vault.sharesSupply.plus(sharesMinted);
 
   vault.save();
+}
+
+export function withdraw(
+  vaultContract: VaultContract,
+  from: Address,
+  to: Address,
+  withdrawnAmount: BigInt,
+  sharesBurnt: BigInt,
+  pricePerShare: BigInt,
+  transaction: Transaction
+): void {
+  let account = accountLibrary.getOrCreate(from);
+  let vault = getOrCreate(to, transaction.hash.toHexString());
+
+  withdrawalLibrary.getOrCreate(
+    account,
+    vault,
+    transaction,
+    withdrawnAmount,
+    sharesBurnt
+  );
+
+  // Updating Account Vault Position Update
+  let accountVaultPositionId = accountVaultPositionLibrary.buildId(
+    account,
+    vault
+  );
+  let accountVaultPosition = AccountVaultPosition.load(accountVaultPositionId);
+  // This scenario where accountVaultPosition === null shouldn't happen. Acount vault position should have been created when the account deposited the tokens.
+  if (accountVaultPosition !== null) {
+    let latestAccountVaultPositionUpdate = AccountVaultPositionUpdate.load(
+      accountVaultPosition.latestUpdate
+    );
+    // The scenario where latestAccountVaultPositionUpdate === null shouldn't happen. One account vault position update should have created when user deposited the tokens.
+    if (latestAccountVaultPositionUpdate !== null) {
+      accountVaultPositionLibrary.withdraw(
+        vaultContract,
+        accountVaultPosition as AccountVaultPosition,
+        latestAccountVaultPositionUpdate as AccountVaultPositionUpdate,
+        withdrawnAmount,
+        sharesBurnt,
+        transaction
+      );
+    }
+  }
+
+  // Updating Vault Update
+  let latestVaultUpdate = VaultUpdate.load(vault.latestUpdate);
+  // This scenario where latestVaultUpdate === null shouldn't happen. One vault update should have created when user deposited the tokens.
+  if (latestVaultUpdate !== null) {
+    vaultUpdateLibrary.withdraw(
+      vault,
+      latestVaultUpdate as VaultUpdate,
+      pricePerShare,
+      withdrawnAmount,
+      sharesBurnt,
+      transaction
+    );
+  }
+}
+
+export function transfer(
+  vaultContract: VaultContract,
+  from: Address,
+  to: Address,
+  amount: BigInt,
+  tokenAddress: Address,
+  shareAmount: BigInt,
+  vaultAddress: Address,
+  transaction: Transaction
+): void {
+  let token = tokenLibrary.getOrCreateToken(tokenAddress);
+  let shareToken = tokenLibrary.getOrCreateToken(vaultAddress);
+  let fromAccount = accountLibrary.getOrCreate(from);
+  let toAccount = accountLibrary.getOrCreate(to);
+  let vault = getOrCreate(vaultAddress, transaction.hash.toHexString());
+  transferLibrary.getOrCreate(
+    fromAccount,
+    toAccount,
+    vault,
+    token,
+    amount,
+    shareToken,
+    shareAmount,
+    transaction
+  );
+
+  accountVaultPositionLibrary.transfer(
+    vaultContract,
+    fromAccount,
+    toAccount,
+    vault,
+    amount,
+    shareAmount,
+    transaction
+  );
+}
+
+export function strategyReported(
+  transaction: Transaction,
+  vaultAddress: Address,
+  pricePerShare: BigInt
+): void {
+  let vault = getOrCreate(vaultAddress, transaction.hash.toHexString());
+  let latestVaultUpdate = VaultUpdate.load(vault.latestUpdate);
+  // The latest vault update should exist
+  if (latestVaultUpdate !== null) {
+    vaultUpdateLibrary.strategyReported(
+      vault,
+      latestVaultUpdate as VaultUpdate,
+      transaction,
+      pricePerShare
+    );
+  }
 }
